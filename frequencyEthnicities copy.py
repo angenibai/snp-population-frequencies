@@ -90,7 +90,7 @@ for snp in targetAlleles:
             alleleFreqs[eth] = alleleCounts[eth]/(totalPop[eth])
 
     # Time to put this into the csv file
-    with open("pooled_snps.csv","r",encoding="utf-8") as readF:
+    with open("pooled_snps copy.csv","r",encoding="utf-8") as readF:
         read = csv.reader(readF)
         dataList = list(read)
 
