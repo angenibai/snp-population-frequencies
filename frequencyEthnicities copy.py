@@ -1,7 +1,5 @@
 import requests, sys, csv
 
-# Do some debugging with total frequency because something is going wrong
-
 targetAlleles = {
     "rs3184504":"T",
     "rs2327832":"G",
