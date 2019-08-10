@@ -1,11 +1,5 @@
 import requests, sys, csv
 
-targetAlleles = {
-    "rs3184504":"T",
-    "rs2327832":"G",
-    "rs13151961":"A"
-}
-
 '''
 European --> 0
 Mediterranean --> 1
@@ -40,8 +34,12 @@ ethNames = ["European", "Mediterranean", "Native American", "Northeast Asian", "
 
 unwantedPops = ["AFR","AMR","EAS","EUR","SAS","ACB","MXL","ALL"]
 
-for snp in targetAlleles:
-    target = targetAlleles[snp]
+with open("chosen_snps.csv", "r") as readF:
+    read = csv.reader(readF)
+    snpList = list(read)
+
+for row in snpList[1:]:
+    snp, target, chr = row
     print("Collecting data for %s target %s" %(snp, target))
 
     # Calling data part
@@ -51,10 +49,18 @@ for snp in targetAlleles:
     r = requests.get(server+ext, headers={"Content-Type" : "application/json"})
 
     if not r.ok:
-        r.raise_for_status()
-        sys.exit()
+        continue
 
     rawData = r.json()
+
+    # Check minor allele frequency is acceptable
+    if rawData["MAF"] < 0.01:
+        continue
+
+    # Get some basic info
+    m = rawData["mappings"][0]
+    chr = m["seq_region_name"]
+    location = m["location"]
 
     # Initialising allele counts and frequencies for this snp
     alleleCounts = [0 for i in range(popLen)]
@@ -78,10 +84,8 @@ for snp in targetAlleles:
 
         if p["allele"] == target:
             # We can update our data for this population's ethnicity
-
             totalPop[eth] += int(newCount/newFreq + 0.5)
-            alleleFreqs[eth] = (alleleCounts[eth]+newCount)/totalPop[eth]
-
+            alleleFreqs[eth] = float(alleleCounts[eth]+newCount)/totalPop[eth]
             alleleCounts[eth] += newCount
 
         elif p["frequency"] == 1:
@@ -90,15 +94,14 @@ for snp in targetAlleles:
             alleleFreqs[eth] = alleleCounts[eth]/(totalPop[eth])
 
     # Time to put this into the csv file
-    with open("pooled_snps copy.csv","r",encoding="utf-8") as readF:
+    with open("pooled_snps.csv","r") as readF:
         read = csv.reader(readF)
         dataList = list(read)
 
-    dataList[0].append("%s (%s)" %(snp, target)) # Adding the name of the SNP as a header
-    for eth in range(popLen):
-        # Adding frequency of this SNP onto the end of the row for this ethnicity
-        dataList[eth+1].append(alleleFreqs[eth])
+    # Name, chr, location, target allele, then ethnicities in order
+    newRow = [snp,chr,location,target] + alleleFreqs
+    dataList.append(newRow)
 
-    with open("pooled_snps.csv","w",encoding="utf-8") as writeF:
+    with open("pooled_snps.csv","w") as writeF:
         csvWriter = csv.writer(writeF)
         csvWriter.writerows(dataList)
