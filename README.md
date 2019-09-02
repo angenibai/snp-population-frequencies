@@ -1,4 +1,4 @@
-##Description of each file and its role in the order they are run
+## Description of each file and its role in the order they are run
 
 1. **getAllSNPs.R** - gets a list of random SNP IDs available from SNPedia
 2. **getSNPNames.py** - Uses a list of completely randomly chosen SNP IDs and picks a set number of IDs per chromosome to output to a list of the curated SNPs
