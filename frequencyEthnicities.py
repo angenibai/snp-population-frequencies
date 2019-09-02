@@ -1,4 +1,22 @@
 import requests, sys, csv
+from time import sleep
+
+"""
+For every single SNP chosen, gathers its allele frequency data from 1000GP
+and pools by ancestral region
+"""
+
+"""
+SET FILENAMES
+"""
+readSNPFile = "chosen_snps.csv"
+popDataFile = "snp_population_data.csv"
+
+"""
+SET START INDEX
+This program adds onto existing files
+"""
+startIdx = 708
 
 '''
 European --> 0
@@ -34,13 +52,19 @@ ethNames = ["European", "Mediterranean", "Native American", "Northeast Asian", "
 
 unwantedPops = ["AFR","AMR","EAS","EUR","SAS","ACB","MXL","ALL"]
 
-with open("chosen_snps.csv", "r") as readF:
+with open(readSNPFile, "r") as readF:
     read = csv.reader(readF)
     snpList = list(read)
 
-for row in snpList[1:]:
-    snp, target, chr = row
-    print("Collecting data for %s target %s" %(snp, target))
+counter = 1
+for row in snpList[708:]:
+    snp, target, chr, risk = row
+    print("%d Collecting data for %s target %s" %(counter, snp, target))
+    counter += 1
+
+    # Gotta make sure we don't go over the request limit
+    if counter % 50 == 0:
+        sleep(45)
 
     # Calling data part
     server = "https://rest.ensembl.org"
@@ -53,9 +77,13 @@ for row in snpList[1:]:
 
     rawData = r.json()
 
+    '''
     # Check minor allele frequency is acceptable
+    if not rawData["MAF"]:
+        continue
     if rawData["MAF"] < 0.01:
         continue
+    '''
 
     # Get some basic info
     m = rawData["mappings"][0]
@@ -93,15 +121,16 @@ for row in snpList[1:]:
             totalPop[eth] += int(newCount/newFreq + 0.5)
             alleleFreqs[eth] = alleleCounts[eth]/(totalPop[eth])
 
-    # Time to put this into the csv file
-    with open("pooled_snps.csv","r") as readF:
+
+    # Adding to an existing population file
+    with open(popDataFile,"r") as readF:
         read = csv.reader(readF)
         dataList = list(read)
 
     # Name, chr, location, target allele, then ethnicities in order
-    newRow = [snp,chr,location,target] + alleleFreqs
+    newRow = [snp,target,chr,risk] + alleleFreqs
     dataList.append(newRow)
 
-    with open("pooled_snps.csv","w") as writeF:
+    with open(popDataFile,"w") as writeF:
         csvWriter = csv.writer(writeF)
         csvWriter.writerows(dataList)

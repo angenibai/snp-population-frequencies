@@ -2,8 +2,8 @@ library (SNPediaR)
 
 res <- getCategoryElements(category = "In_dbSNP")
 
-# Select 5000 SNPs randomly
-randomIndexes <- sample.int(107085, 5000) 
+# Select 8000 SNPs randomly
+randomIndexes <- sample.int(107085, 8000) 
 selection <- res[randomIndexes]
 
 # Extract chromosome and position info
@@ -14,4 +14,4 @@ snpInfo <- data.frame(matrix(unlist(dataList), nrow=length(dataList), byrow=T))
 colnames(snpInfo) <- c("chromosome","position")
 rownames(snpInfo) <- selection
 
-write.csv(snpInfo, file="snpList copy.csv")
+write.csv(snpInfo, file="snpList.csv")
